@@ -1,0 +1,44 @@
+<DOC> 
+<DOCNO> 0 </DOCNO> 
+<TEXT> zero </TEXT>
+</DOC>
+<DOC> 
+<DOCNO> 1 </DOCNO> 
+<TEXT> ten </TEXT>
+</DOC>
+<DOC>
+<DOCNO> 2 </DOCNO>
+<TEXT> ten nine </TEXT>
+</DOC>
+<DOC>
+<DOCNO> 3 </DOCNO>
+<TEXT> ten nine eight </TEXT>
+</DOC>
+<DOC>
+<DOCNO> 4 </DOCNO>
+<TEXT> ten nine eight seven </TEXT>
+</DOC>
+<DOC> 
+<DOCNO> 5 </DOCNO> 
+<TEXT>ten nine eight seven six </TEXT>
+</DOC>
+<DOC>
+<DOCNO> 6 </DOCNO>
+<TEXT> ten nine eight seven six five </TEXT>
+</DOC>
+<DOC> 
+<DOCNO> 7 </DOCNO> 
+<TEXT>ten nine eight seven six five four </TEXT>
+</DOC>
+<DOC> 
+<DOCNO> 8 </DOCNO> 
+<TEXT>ten nine eight seven six five four three </TEXT>
+</DOC>
+<DOC> 
+<DOCNO> 9 </DOCNO>
+<TEXT> ten nine eight seven six five four three two </TEXT>
+</DOC>
+<DOC> 
+<DOCNO> 10 </DOCNO> 
+<TEXT> ten nine eight seven six five four three two one </TEXT>
+</DOC>
