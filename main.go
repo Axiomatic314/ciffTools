@@ -13,12 +13,11 @@ import (
 )
 
 func ReadNextMessage(bufferedReader *bufio.Reader, messageStruct proto.Message) error {
-	sizeBuffer, err := bufferedReader.Peek(10)
+	sizeBuffer, err := bufferedReader.Peek(binary.MaxVarintLen64)
 	if err != nil {
 		slog.Debug("error trying to peek at message length", "error", err)
 	}
 	messageSize, bytesRead := binary.Uvarint(sizeBuffer)
-	// fmt.Printf("%d, %d\n", messageSize, bytesRead)
 	bufferedReader.Discard(bytesRead)
 
 	byteBuffer := make([]byte, messageSize)
