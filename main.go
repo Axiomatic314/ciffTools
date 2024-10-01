@@ -127,6 +127,91 @@ func ReadNextMessage(bufferedReader *bufio.Reader, messageStruct proto.Message) 
 	return nil
 }
 
+func WriteNextMessage(bufferedWriter *bufio.Writer, messageStruct proto.Message) error {
+	byteBuffer, err := proto.Marshal(messageStruct)
+	if err != nil {
+		slog.Debug("error during marshal", "error", err)
+		return err
+	}
+
+	sizeBuffer := make([]byte, binary.MaxVarintLen64)
+	bytesWritten := binary.PutUvarint(sizeBuffer, uint64(len(byteBuffer)))
+
+	_, err = bufferedWriter.Write(sizeBuffer[:bytesWritten])
+	if err != nil {
+		slog.Debug("error writing message size", "error", err)
+		return err
+	}
+
+	_, err = bufferedWriter.Write(byteBuffer)
+	if err != nil {
+		slog.Debug("error writing message", "error", err)
+		return err
+	}
+
+	bufferedWriter.Flush()
+
+	return nil
+}
+
+type CiffWriter struct {
+	writeCiff    bool
+	ciffFilePath string
+}
+
+func (writer CiffWriter) WriteCiff(header *ciff.Header, postingsLists []*ciff.PostingsList, docRecords []*ciff.DocRecord) error {
+	if !writer.writeCiff {
+		return nil
+	}
+	ciffFileHandle, err := os.Create(writer.ciffFilePath)
+	if err != nil {
+		slog.Error("error writing ciff", "error", err)
+		return err
+	}
+	defer ciffFileHandle.Close()
+
+	ciffWriter := bufio.NewWriter(ciffFileHandle)
+
+	//Header
+	slog.Debug("writing header")
+
+	err = WriteNextMessage(ciffWriter, header)
+	if err != nil {
+		slog.Error("error writing header message", "error", err)
+		return err
+	}
+
+	//Postings
+	slog.Debug("writing postings lists")
+
+	for postingsListIndex := range header.NumPostingsLists {
+		postingsList := postingsLists[postingsListIndex]
+		//update docids to be d-gaps
+		postings := postingsLists[postingsListIndex].GetPostings()
+		prev := postings[0].GetDocid()
+		for postingsIndex := range postingsLists[postingsListIndex].GetDf() {
+			if postingsIndex > 0 {
+				abs_docid := postings[postingsIndex].GetDocid()
+				postings[postingsIndex].Docid = abs_docid - prev
+				prev = abs_docid
+			}
+		}
+		WriteNextMessage(ciffWriter, postingsList)
+		slog.Debug("postingsList written", "index", postingsListIndex)
+	}
+
+	//DocRecords
+	slog.Debug("writing doc records")
+
+	for docRecordIndex := range docRecords {
+		docRecord := docRecords[docRecordIndex]
+		WriteNextMessage(ciffWriter, docRecord)
+		slog.Debug("doc record written", "index", docRecordIndex)
+	}
+
+	return nil
+}
+
 func main() {
 	ciffFilePath := flag.String("ciffFilePath", "", "filepath of CIFF file to read in")
 	writeHeader := flag.Bool("writeHeader", false, "Bool to write header file. Defaults to false.")
@@ -134,6 +219,7 @@ func main() {
 	writePostings := flag.Bool("writePostings", false, "Bool to write postings file. Defaults to false.")
 	writeDocRecords := flag.Bool("writeDocRecords", false, "Bool to write docRecords file. Defaults to false.")
 	outputDirectory := flag.String("outputDirectory", "output", "The target output directory. If not already present, it is created relative to the current working directory. Any existing files are overwritten!")
+	writeCiff := flag.Bool("writeCiff", false, "Bool to write ciff. Defaults to false.")
 	flag.Parse()
 
 	if !isFlagPassed("ciffFilePath") {
@@ -147,6 +233,11 @@ func main() {
 		writePostings:   *writePostings,
 		writeDocRecords: *writeDocRecords,
 		outputDirectory: *outputDirectory,
+	}
+
+	outputCiffWriter := CiffWriter{
+		writeCiff:    *writeCiff,
+		ciffFilePath: fmt.Sprintf(*outputDirectory + "/q-" + *ciffFilePath),
 	}
 
 	ciffFileHandle, err := os.Open(*ciffFilePath)
@@ -202,9 +293,15 @@ func main() {
 		slog.Debug("docRecord decoded", "index", docRecordIndex, "docRecord", docRecordSlice[docRecordIndex])
 	}
 
+	// --------------------------------------------------------------------------------
+	// Write output files
 	err = os.Mkdir(*outputDirectory, 0777)
 	if err != nil && !os.IsExist(err) {
 		slog.Error("cannot create output directory", "error", err)
+		os.Exit(1)
 	}
+	//todo: should do error checking.....
 	outputFileWriter.CiffToHuman(header, postingsListSlice, docRecordSlice)
+	outputCiffWriter.WriteCiff(header, postingsListSlice, docRecordSlice)
+
 }
