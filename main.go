@@ -212,6 +212,14 @@ func (writer CiffWriter) WriteCiff(header *ciff.Header, postingsLists []*ciff.Po
 	return nil
 }
 
+func ATIRE_BM25(posting *ciff.Posting) float64 {
+
+}
+
+func Quantize() {
+	//call ATIRE_BM25 on individual posting
+}
+
 func main() {
 	ciffFilePath := flag.String("ciffFilePath", "", "filepath of CIFF file to read in")
 	writeHeader := flag.Bool("writeHeader", false, "Bool to write header file. Defaults to false.")
