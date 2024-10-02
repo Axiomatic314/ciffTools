@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/Axiomatic314/qCIFF/ciff"
+	"github.com/Axiomatic314/qCIFF/quantize"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -212,14 +213,6 @@ func (writer CiffWriter) WriteCiff(header *ciff.Header, postingsLists []*ciff.Po
 	return nil
 }
 
-func ATIRE_BM25(posting *ciff.Posting) float64 {
-
-}
-
-func Quantize() {
-	//call ATIRE_BM25 on individual posting
-}
-
 func main() {
 	ciffFilePath := flag.String("ciffFilePath", "", "filepath of CIFF file to read in")
 	writeHeader := flag.Bool("writeHeader", false, "Bool to write header file. Defaults to false.")
@@ -302,13 +295,16 @@ func main() {
 	}
 
 	// --------------------------------------------------------------------------------
+	// Quantize Index
+	quantize.QuantizeIndex(postingsListSlice, docRecordSlice, header.AverageDoclength, header.NumDocs, 8)
+
+	// --------------------------------------------------------------------------------
 	// Write output files
 	err = os.Mkdir(*outputDirectory, 0777)
 	if err != nil && !os.IsExist(err) {
 		slog.Error("cannot create output directory", "error", err)
 		os.Exit(1)
 	}
-	//todo: should do error checking.....
 	outputFileWriter.CiffToHuman(header, postingsListSlice, docRecordSlice)
 	outputCiffWriter.WriteCiff(header, postingsListSlice, docRecordSlice)
 
