@@ -8,11 +8,11 @@ import (
 
 var smallestRSV float64 = math.MaxFloat64
 var largestRSV float64 = 0
-var epsilon = math.Pow10(-10)
 
+// uniform quantization
 func quantize(x float64, bits int32) int32 {
-	scale := math.Pow(2, float64(bits))
-	return int32(scale * ((x - smallestRSV) / (largestRSV - smallestRSV + float64(epsilon))))
+	scale := math.Pow(2, float64(bits)) - 2
+	return int32(((x-smallestRSV)/(largestRSV-smallestRSV))*scale) + 1
 }
 
 func QuantizeIndex(postingsLists []*ciff.PostingsList, docRecords []*ciff.DocRecord, averageDocLength float64, numDocs int32, bits int32) {
@@ -41,7 +41,7 @@ func QuantizeIndex(postingsLists []*ciff.PostingsList, docRecords []*ciff.DocRec
 		}
 	}
 
-	//uniform quantization
+	//update tfs with uniform quantization
 	for postingListIndex := range len(postingsLists) {
 		idf := scorer.IDF(postingsLists[postingListIndex].Df)
 		postings := postingsLists[postingListIndex].Postings
