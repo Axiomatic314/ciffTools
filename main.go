@@ -214,6 +214,8 @@ func (writer CiffWriter) WriteCiff(header *ciff.Header, postingsLists []*ciff.Po
 }
 
 func main() {
+	slog.SetLogLoggerLevel(slog.LevelDebug)
+
 	ciffFilePath := flag.String("ciffFilePath", "", "filepath of CIFF file to read in")
 	writeHeader := flag.Bool("writeHeader", false, "Bool to write header file. Defaults to false.")
 	writeDict := flag.Bool("writeDict", false, "Bool to write dictionary file. Defaults to false.")
@@ -270,16 +272,23 @@ func main() {
 		postingsList := &ciff.PostingsList{}
 		ReadNextMessage(ciffReader, postingsList)
 		postingsListSlice[postingsListIndex] = postingsList
-		slog.Debug("postingsList decoded", "index", postingsListIndex, "postingsList", postingsListSlice[postingsListIndex])
+		slog.Debug("postingsList", "term", postingsList.Term, "docFreq", postingsList.Df)
+		// slog.Debug("postingsList decoded", "index", postingsListIndex, "postingsList", postingsListSlice[postingsListIndex])
 		//update d-gaps to be actual docids
-		postings := postingsListSlice[postingsListIndex].GetPostings()
-		prev := postings[0].GetDocid()
-		for postingsIndex := range postingsListSlice[postingsListIndex].GetDf() {
+		postings := postingsListSlice[postingsListIndex].Postings
+		if len(postings) <= 0 {
+			continue
+		}
+		prev := postings[0].Docid
+		slog.Debug("these should match...", "Df", fmt.Sprint(postingsListSlice[postingsListIndex].Df), "length", fmt.Sprint(len(postings)))
+		for postingsIndex := range postingsListSlice[postingsListIndex].Df {
+			// for postingsIndex := range len(postings) {
 			if postingsIndex > 0 {
 				postings[postingsIndex].Docid += prev
-				prev = postings[postingsIndex].GetDocid()
+				prev = postings[postingsIndex].Docid
 			}
 		}
+		slog.Debug("postingsList docids converted from d-gaps", "index", postingsListIndex)
 	}
 
 	// --------------------------------------------------------------------------------
@@ -296,7 +305,9 @@ func main() {
 
 	// --------------------------------------------------------------------------------
 	// Quantize Index
-	quantize.QuantizeIndex(postingsListSlice, docRecordSlice, header.AverageDoclength, header.NumDocs, 8)
+	if *writeCiff {
+		quantize.QuantizeIndex(postingsListSlice, docRecordSlice, header.AverageDoclength, header.NumDocs, 8)
+	}
 
 	// --------------------------------------------------------------------------------
 	// Write output files
