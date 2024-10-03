@@ -26,3 +26,5 @@ go.work.sum
 
 # Local files to ignore
 /.vscode
+*.ciff
+/robust04
