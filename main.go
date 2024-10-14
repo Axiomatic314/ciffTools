@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"flag"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 
@@ -113,7 +114,9 @@ func ReadNextMessage(bufferedReader *bufio.Reader, messageStruct proto.Message) 
 	bufferedReader.Discard(bytesRead)
 
 	byteBuffer := make([]byte, messageSize)
-	_, err = bufferedReader.Read(byteBuffer)
+	// bytesRead, err = bufferedReader.Read(byteBuffer)
+	bytesRead, err = io.ReadFull(bufferedReader, byteBuffer)
+	slog.Debug("reading message", "messageSize", messageSize, "bufferSize", binary.Size(byteBuffer), "bytesRead", bytesRead)
 	if err != nil {
 		slog.Debug("error reading message bytes", "error", err)
 		return err
@@ -272,23 +275,24 @@ func main() {
 		postingsList := &ciff.PostingsList{}
 		ReadNextMessage(ciffReader, postingsList)
 		postingsListSlice[postingsListIndex] = postingsList
-		slog.Debug("postingsList", "term", postingsList.Term, "docFreq", postingsList.Df)
-		// slog.Debug("postingsList decoded", "index", postingsListIndex, "postingsList", postingsListSlice[postingsListIndex])
-		//update d-gaps to be actual docids
+		slog.Debug("postingsList", "term", postingsList.Term, "docFreq", postingsList.Df, "postingLen", len(postingsList.Postings))
 		postings := postingsListSlice[postingsListIndex].Postings
 		if len(postings) <= 0 {
 			continue
 		}
 		prev := postings[0].Docid
-		slog.Debug("these should match...", "Df", fmt.Sprint(postingsListSlice[postingsListIndex].Df), "length", fmt.Sprint(len(postings)))
+		if postingsList.Df != int64(len(postings)) {
+			slog.Error("Unexpected number of postings.", "DocFreq", postingsList.Df, "NumPostings", len(postings))
+			// slog.Debug("", "size", proto.Size(postingsList), "reader", ciffReader.Size())
+			os.Exit(1)
+		}
 		for postingsIndex := range postingsListSlice[postingsListIndex].Df {
-			// for postingsIndex := range len(postings) {
 			if postingsIndex > 0 {
 				postings[postingsIndex].Docid += prev
 				prev = postings[postingsIndex].Docid
 			}
 		}
-		slog.Debug("postingsList docids converted from d-gaps", "index", postingsListIndex)
+		// slog.Debug("postingsList docids converted from d-gaps", "index", postingsListIndex)
 	}
 
 	// --------------------------------------------------------------------------------
