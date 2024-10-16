@@ -269,7 +269,11 @@ func main() {
 	// PostingsList
 	slog.Info("reading postings lists")
 	postingsListSlice := make([]*ciff.PostingsList, header.NumPostingsLists)
+	n := header.NumPostingsLists / 10
 	for postingsListIndex := range header.NumPostingsLists {
+		if postingsListIndex%n == 0 {
+			slog.Info(fmt.Sprintf("postings list %d/%d", postingsListIndex, header.NumPostingsLists))
+		}
 		postingsList := &ciff.PostingsList{}
 		ReadNextMessage(ciffReader, postingsList)
 		postingsListSlice[postingsListIndex] = postingsList
