@@ -32,6 +32,7 @@ type FileWriter struct {
 func (writer FileWriter) CiffToHuman(header *ciff.Header, postingsLists []*ciff.PostingsList, docRecords []*ciff.DocRecord) {
 	//Header
 	if writer.writeHeader {
+		slog.Info("writing human-readable header")
 		headerFileHandle, err := os.Create(fmt.Sprintf("%v/output.header", writer.outputDirectory))
 		if err != nil {
 			slog.Error("error creating header", "error", err)
@@ -52,6 +53,7 @@ func (writer FileWriter) CiffToHuman(header *ciff.Header, postingsLists []*ciff.
 
 	//Dictionary
 	if writer.writeDict {
+		slog.Info("writing human-readable dictionary")
 		dictFileHandle, err := os.Create(fmt.Sprintf("%v/output.dict", writer.outputDirectory))
 		if err != nil {
 			slog.Error("error creating dictionary", "error", err)
@@ -68,6 +70,7 @@ func (writer FileWriter) CiffToHuman(header *ciff.Header, postingsLists []*ciff.
 
 	//PostingsLists
 	if writer.writePostings {
+		slog.Info("writing human-readable postings")
 		postingsFileHandle, err := os.Create(fmt.Sprintf("%v/output.postings", writer.outputDirectory))
 		if err != nil {
 			slog.Error("error opening postingsList", "error", err)
@@ -89,6 +92,7 @@ func (writer FileWriter) CiffToHuman(header *ciff.Header, postingsLists []*ciff.
 
 	//DocRecords
 	if writer.writeDocRecords {
+		slog.Info("writing human-readable docRecords")
 		docRecordsFileHandle, err := os.Create(fmt.Sprintf("%v/output.docRecords", writer.outputDirectory))
 		if err != nil {
 			slog.Error("error opening docRecords", "error", err)
@@ -167,18 +171,17 @@ func (writer CiffWriter) WriteCiff(header *ciff.Header, postingsLists []*ciff.Po
 	if !writer.writeCiff {
 		return nil
 	}
+	slog.Info("writing ciff")
 	ciffFileHandle, err := os.Create(writer.ciffFilePath)
 	if err != nil {
 		slog.Error("error writing ciff", "error", err)
 		return err
 	}
 	defer ciffFileHandle.Close()
-
 	ciffWriter := bufio.NewWriter(ciffFileHandle)
 
 	//Header
-	slog.Debug("writing header")
-
+	slog.Info("writing ciff header")
 	err = WriteNextMessage(ciffWriter, header)
 	if err != nil {
 		slog.Error("error writing header message", "error", err)
@@ -186,8 +189,7 @@ func (writer CiffWriter) WriteCiff(header *ciff.Header, postingsLists []*ciff.Po
 	}
 
 	//Postings
-	slog.Debug("writing postings lists")
-
+	slog.Info("writing ciff postings lists")
 	for postingsListIndex := range header.NumPostingsLists {
 		postingsList := postingsLists[postingsListIndex]
 		//update docids to be d-gaps
@@ -205,8 +207,7 @@ func (writer CiffWriter) WriteCiff(header *ciff.Header, postingsLists []*ciff.Po
 	}
 
 	//DocRecords
-	slog.Debug("writing doc records")
-
+	slog.Info("writing ciff doc records")
 	for docRecordIndex := range docRecords {
 		docRecord := docRecords[docRecordIndex]
 		WriteNextMessage(ciffWriter, docRecord)
@@ -217,7 +218,7 @@ func (writer CiffWriter) WriteCiff(header *ciff.Header, postingsLists []*ciff.Po
 }
 
 func main() {
-	slog.SetLogLoggerLevel(slog.LevelDebug)
+	// slog.SetLogLoggerLevel(slog.LevelDebug)
 
 	ciffFilePath := flag.String("ciffFilePath", "", "filepath of CIFF file to read in")
 	writeHeader := flag.Bool("writeHeader", false, "Bool to write header file. Defaults to false.")
@@ -225,7 +226,7 @@ func main() {
 	writePostings := flag.Bool("writePostings", false, "Bool to write postings file. Defaults to false.")
 	writeDocRecords := flag.Bool("writeDocRecords", false, "Bool to write docRecords file. Defaults to false.")
 	outputDirectory := flag.String("outputDirectory", "output", "The target output directory. If not already present, it is created relative to the current working directory. Any existing files are overwritten!")
-	writeCiff := flag.Bool("writeCiff", false, "Bool to write ciff. Defaults to false.")
+	writeCiff := flag.Bool("writeCiff", false, "Bool to write quantized ciff. Defaults to false.")
 	flag.Parse()
 
 	if !isFlagPassed("ciffFilePath") {
@@ -252,13 +253,11 @@ func main() {
 		os.Exit(1)
 	}
 	defer ciffFileHandle.Close()
-
 	ciffReader := bufio.NewReader(ciffFileHandle)
 
 	// --------------------------------------------------------------------------------
 	// Header
-	slog.Debug("reading header")
-
+	slog.Info("reading header")
 	header := &ciff.Header{}
 	err = ReadNextMessage(ciffReader, header)
 	if err != nil {
@@ -268,8 +267,7 @@ func main() {
 
 	// --------------------------------------------------------------------------------
 	// PostingsList
-	slog.Debug("reading postings lists")
-
+	slog.Info("reading postings lists")
 	postingsListSlice := make([]*ciff.PostingsList, header.NumPostingsLists)
 	for postingsListIndex := range header.NumPostingsLists {
 		postingsList := &ciff.PostingsList{}
@@ -283,7 +281,6 @@ func main() {
 		prev := postings[0].Docid
 		if postingsList.Df != int64(len(postings)) {
 			slog.Error("Unexpected number of postings.", "DocFreq", postingsList.Df, "NumPostings", len(postings))
-			// slog.Debug("", "size", proto.Size(postingsList), "reader", ciffReader.Size())
 			os.Exit(1)
 		}
 		for postingsIndex := range postingsListSlice[postingsListIndex].Df {
@@ -292,13 +289,12 @@ func main() {
 				prev = postings[postingsIndex].Docid
 			}
 		}
-		// slog.Debug("postingsList docids converted from d-gaps", "index", postingsListIndex)
+		slog.Debug("postingsList docids converted from d-gaps", "index", postingsListIndex)
 	}
 
 	// --------------------------------------------------------------------------------
 	// DocRecord
-	slog.Debug("reading doc records")
-
+	slog.Info("reading doc records")
 	docRecordSlice := make([]*ciff.DocRecord, header.NumDocs)
 	for docRecordIndex := range header.NumDocs {
 		r := &ciff.DocRecord{}
@@ -310,6 +306,7 @@ func main() {
 	// --------------------------------------------------------------------------------
 	// Quantize Index
 	if *writeCiff {
+		slog.Info("quantizing index")
 		quantize.QuantizeIndex(postingsListSlice, docRecordSlice, header.AverageDoclength, header.NumDocs, 8)
 	}
 
@@ -322,5 +319,5 @@ func main() {
 	}
 	outputFileWriter.CiffToHuman(header, postingsListSlice, docRecordSlice)
 	outputCiffWriter.WriteCiff(header, postingsListSlice, docRecordSlice)
-
+	slog.Info("complete")
 }

@@ -14,11 +14,6 @@ func (ranker rankingFunction) IDF(docFreq int64) float64 {
 	return math.Log((float64(ranker.numDocs)) / float64(docFreq))
 }
 
-// func (ranker RankingFunction) termWeight(termFreq int32, docLength int32) float64 {
-// 	top := (ranker.k1 + 1) * float64(termFreq)
-// 	return top / (ranker.k1*(1-ranker.b+ranker.b*(float64(docLength)/ranker.averageDocLength)) + float64(termFreq))
-// }
-
 func (ranker rankingFunction) ATIRE_BM25(termFreq int32, docLength int32, idf float64) float64 {
 	top := (ranker.k1 + 1) * float64(termFreq)
 	termWeight := top / (ranker.k1*(1-ranker.b+ranker.b*(float64(docLength)/ranker.averageDocLength)) + float64(termFreq))
