@@ -9,8 +9,8 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/Axiomatic314/qCIFF/ciff"
-	"github.com/Axiomatic314/qCIFF/quantize"
+	"github.com/Axiomatic314/ciffTools/ciff"
+	"github.com/Axiomatic314/ciffTools/quantize"
 	"google.golang.org/protobuf/proto"
 )
 

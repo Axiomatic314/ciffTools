@@ -3,7 +3,7 @@ package quantize
 import (
 	"math"
 
-	"github.com/Axiomatic314/qCIFF/ciff"
+	"github.com/Axiomatic314/ciffTools/ciff"
 )
 
 var smallestRSV float64 = math.MaxFloat64

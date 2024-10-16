@@ -1,4 +1,4 @@
-module github.com/Axiomatic314/qCIFF
+module github.com/Axiomatic314/ciffTools
 
 go 1.22.4
 
