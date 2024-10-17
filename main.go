@@ -8,6 +8,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/Axiomatic314/ciffTools/ciff"
 	"github.com/Axiomatic314/ciffTools/quantize"
@@ -33,7 +34,7 @@ func (writer FileWriter) CiffToHuman(header *ciff.Header, postingsLists []*ciff.
 	//Header
 	if writer.writeHeader {
 		slog.Info("writing human-readable header")
-		headerFileHandle, err := os.Create(fmt.Sprintf("%v/output.header", writer.outputDirectory))
+		headerFileHandle, err := os.Create(filepath.Join(writer.outputDirectory, "output.header"))
 		if err != nil {
 			slog.Error("error creating header", "error", err)
 			os.Exit(1)
@@ -54,7 +55,7 @@ func (writer FileWriter) CiffToHuman(header *ciff.Header, postingsLists []*ciff.
 	//Dictionary
 	if writer.writeDict {
 		slog.Info("writing human-readable dictionary")
-		dictFileHandle, err := os.Create(fmt.Sprintf("%v/output.dict", writer.outputDirectory))
+		dictFileHandle, err := os.Create(filepath.Join(writer.outputDirectory, "output.dict"))
 		if err != nil {
 			slog.Error("error creating dictionary", "error", err)
 			os.Exit(1)
@@ -71,7 +72,7 @@ func (writer FileWriter) CiffToHuman(header *ciff.Header, postingsLists []*ciff.
 	//PostingsLists
 	if writer.writePostings {
 		slog.Info("writing human-readable postings")
-		postingsFileHandle, err := os.Create(fmt.Sprintf("%v/output.postings", writer.outputDirectory))
+		postingsFileHandle, err := os.Create(filepath.Join(writer.outputDirectory, "output.postings"))
 		if err != nil {
 			slog.Error("error opening postingsList", "error", err)
 			os.Exit(1)
@@ -93,7 +94,7 @@ func (writer FileWriter) CiffToHuman(header *ciff.Header, postingsLists []*ciff.
 	//DocRecords
 	if writer.writeDocRecords {
 		slog.Info("writing human-readable docRecords")
-		docRecordsFileHandle, err := os.Create(fmt.Sprintf("%v/output.docRecords", writer.outputDirectory))
+		docRecordsFileHandle, err := os.Create(filepath.Join(writer.outputDirectory, "output.docRecords"))
 		if err != nil {
 			slog.Error("error opening docRecords", "error", err)
 			os.Exit(1)
@@ -118,7 +119,6 @@ func ReadNextMessage(bufferedReader *bufio.Reader, messageStruct proto.Message) 
 	bufferedReader.Discard(bytesRead)
 
 	byteBuffer := make([]byte, messageSize)
-	// bytesRead, err = bufferedReader.Read(byteBuffer)
 	bytesRead, err = io.ReadFull(bufferedReader, byteBuffer)
 	slog.Debug("reading message", "messageSize", messageSize, "bufferSize", binary.Size(byteBuffer), "bytesRead", bytesRead)
 	if err != nil {
@@ -233,6 +233,7 @@ func main() {
 		fmt.Println("Please provide a CIFF file!")
 		os.Exit(1)
 	}
+	_, ciffFile := filepath.Split(*ciffFilePath)
 
 	outputFileWriter := FileWriter{
 		writeHeader:     *writeHeader,
@@ -244,7 +245,7 @@ func main() {
 
 	outputCiffWriter := CiffWriter{
 		writeCiff:    *writeCiff,
-		ciffFilePath: fmt.Sprintf(*outputDirectory + "/q-" + *ciffFilePath),
+		ciffFilePath: filepath.Join(*outputDirectory, "q-", ciffFile),
 	}
 
 	ciffFileHandle, err := os.Open(*ciffFilePath)
