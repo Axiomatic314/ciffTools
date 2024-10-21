@@ -245,7 +245,7 @@ func main() {
 
 	outputCiffWriter := CiffWriter{
 		writeCiff:    *writeCiff,
-		ciffFilePath: filepath.Join(*outputDirectory, "q-", ciffFile),
+		ciffFilePath: filepath.Join(*outputDirectory, fmt.Sprintf("q-%s", ciffFile)),
 	}
 
 	ciffFileHandle, err := os.Open(*ciffFilePath)
