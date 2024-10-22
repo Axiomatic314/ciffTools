@@ -15,11 +15,10 @@ func quantize(x float64, bits int32) int32 {
 	return int32(((x-smallestRSV)/(largestRSV-smallestRSV))*scale) + 1
 }
 
-func QuantizeIndex(postingsLists []*ciff.PostingsList, docRecords []*ciff.DocRecord, averageDocLength float64, numDocs int32, bits int32) {
-	//todo: add option to specify k1, b and maybe also ranking function itself
+func QuantizeIndex(postingsLists []*ciff.PostingsList, docRecords []*ciff.DocRecord, averageDocLength float64, numDocs int32, bits int32, k1 float64, b float64) {
 	scorer := rankingFunction{
-		k1:               0.9,
-		b:                0.4,
+		k1:               k1,
+		b:                b,
 		numDocs:          numDocs,
 		averageDocLength: averageDocLength,
 	}

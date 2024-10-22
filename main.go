@@ -227,6 +227,8 @@ func main() {
 	writeDocRecords := flag.Bool("writeDocRecords", false, "Bool to write docRecords file. Defaults to false.")
 	outputDirectory := flag.String("outputDirectory", "output", "The target output directory. If not already present, it is created relative to the current working directory. Any existing files are overwritten!")
 	writeCiff := flag.Bool("writeCiff", false, "Bool to write quantized ciff. Defaults to false.")
+	k1 := flag.Float64("k1", 0.9, "k1 value for BM25.")
+	b := flag.Float64("b", 0.4, "b value for BM25.")
 	flag.Parse()
 
 	if !isFlagPassed("ciffFilePath") {
@@ -234,6 +236,8 @@ func main() {
 		os.Exit(1)
 	}
 	_, ciffFile := filepath.Split(*ciffFilePath)
+
+	fmt.Printf("%f %f\n", *k1, *b)
 
 	outputFileWriter := FileWriter{
 		writeHeader:     *writeHeader,
@@ -312,7 +316,7 @@ func main() {
 	// Quantize Index
 	if *writeCiff {
 		slog.Info("quantizing index")
-		quantize.QuantizeIndex(postingsListSlice, docRecordSlice, header.AverageDoclength, header.NumDocs, 8)
+		quantize.QuantizeIndex(postingsListSlice, docRecordSlice, header.AverageDoclength, header.NumDocs, 8, *k1, *b)
 	}
 
 	// --------------------------------------------------------------------------------
