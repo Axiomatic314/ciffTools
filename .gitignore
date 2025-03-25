@@ -28,3 +28,4 @@ go.work.sum
 /.vscode
 *.ciff
 /robust04
+/output
